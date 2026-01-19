@@ -98,19 +98,28 @@ def get_dealerships(request, state="All"):
     dealerships = get_request(endpoint)
     return JsonResponse({"status":200,"dealers":dealerships})
 
-# Create a `get_dealer_reviews` view to render the reviews of a dealer
+from django.http import JsonResponse
+
 def get_dealer_reviews(request, dealer_id):
-    # if dealer id has been provided
-    if(dealer_id):
-        endpoint = "/fetchReviews/dealer/"+str(dealer_id)
-        reviews = get_request(endpoint)
-        for review_detail in reviews:
-            response = analyze_review_sentiments(review_detail['review'])
-            print(response)
-            review_detail['sentiment'] = response['sentiment']
-        return JsonResponse({"status":200,"reviews":reviews})
-    else:
-        return JsonResponse({"status":400,"message":"Bad Request"})
+    if not dealer_id:
+        return JsonResponse({"status": 400, "message": "Bad Request"})
+
+    endpoint = f"/fetchReviews/dealer/{dealer_id}"
+    reviews = get_request(endpoint)
+
+    for review_detail in reviews:
+        try:
+            response = analyze_review_sentiments(review_detail.get('review', ''))
+            # If response is None or missing 'sentiment', default to 'Unknown'
+            sentiment = response.get('sentiment', 'Unknown') if response else 'Unknown'
+        except Exception as e:
+            print(f"Error analyzing sentiment for review: {e}")
+            sentiment = 'Unknown'
+
+        review_detail['sentiment'] = sentiment
+
+    return JsonResponse({"status": 200, "reviews": reviews})
+
 
 # Create a `get_dealer_details` view to render the dealer details
 def get_dealer_details(request, dealer_id):
