@@ -92,4 +92,3 @@ def initiate():
         )
 
     print("All CarMake and CarModel data populated successfully!")
-clear
